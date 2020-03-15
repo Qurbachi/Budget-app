@@ -22,6 +22,36 @@ var budgetController = (function() {
       inc: 0
     }
   };
+
+  return {
+    addItem: function(type, des, value) {
+      var newItem, ID;
+
+      //create new ID
+      if (data.allItems[type].length > 0) {
+        ID = data.allItems[type][data.allItems[type].length - 1].id + 1;
+      } else {
+        ID = 0;
+      }
+
+      //create new item
+      if (type === 'exp') {
+        newItem = new Expense(ID, des, value);
+      } else if (type === 'inc') {
+        newItem = new Income(ID, des, value);
+      }
+
+      //push into data structure
+      data.allItems[type].push(newItem);
+
+      //return new element
+      return newItem;
+
+    },
+    testing: function() {
+      console.log(data);
+    }
+  };
 })();
 
 //UI CONTROLLER
@@ -30,7 +60,9 @@ var uiController = (function() {
     type: '.add__type',
     description: '.add__description',
     value: '.add__value',
-    button: '.add__btn'
+    button: '.add__btn',
+    incomeContainer: '.income__list',
+    expensesContainer: '.expenses__container'
   };
 
   return {
@@ -42,8 +74,40 @@ var uiController = (function() {
       };
     },
 
+    addListItem: function(obj, type) {
+      //Create HTML text with a placeholder
+      var html, newHtml, element;
+      if (type === 'inc') {
+        element = DOMstrings.incomeContainer;
+
+        html = '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      } else if (type === 'exp') {
+        element = DOMstrings.expensesContainer;
+
+        html = '<div class="item clearfix" id="income-%id%"><div class="item__description">&description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+      //Replace placeholder text with some data
+      newHtml = html.replace('&id%', obj.id);
+      newHtml = newHtml.replace('%description%', obj.description);
+      newHtml = newHtml.replace('%value%', obj.value);
+      //Insert HTML into DOM
+      document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);
+    },
+
     getDOMobject: function() {
       return DOMstrings;
+    },
+
+    clearFields: function() {
+      var fields, fieldsArr;
+
+      fields = document.querySelectorAll(DOMstrings.description + ', ' + DOMstrings.value);
+      fieldsArr = Array.prototype.slice.call(fields);
+      fieldsArr.forEach(function(current, index, array) {
+        current.value = "";
+        current.description = "";
+      });
+      fieldsArr.focus();
     }
   };
 })();
@@ -63,8 +127,16 @@ var controller = (function(budgetCtrl, uiCtrl) {
   };
 
   var ctrlAddItem = function() {
+    var input, newItem;
+
     //1. Get the field input data
-    var input = uiCtrl.getInput();
+    input = uiCtrl.getInput();
+    //2.
+    newItem = budgetCtrl.addItem(input.type, input.description, input.value);
+    //3. Add
+    uiCtrl.addListItem(newItem, input.type);
+    //4. CLear the input fields
+    uiCtrl.clearFields();
   };
 
   return {
